@@ -1,9 +1,10 @@
+import Camera from "./Camera/page";
 
 
 export default function Home() {
   return (
    <div>
-    hi  
+    <Camera />  
    </div>
   );
 }
