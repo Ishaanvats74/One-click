@@ -1,12 +1,18 @@
 'use client';
 
 
+
+import { useUser } from '@clerk/nextjs';
 import React, { useEffect, useRef, useState } from 'react'
 
+
 const PhotoCapture = ({  onBack }) => {
+    const { user } = useUser();
+    const username = user?.username || user?.firstName || user?.id;
     const photoref = useRef(null);
     const canvasRef = useRef(null);
     const [filter, setFilter] = useState("none");
+  
 
     const filters  = {
         none: 'none',
@@ -17,7 +23,7 @@ const PhotoCapture = ({  onBack }) => {
     };
 
     useEffect(()=>{
-        async function camerainti() {
+        async function camera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({video: true })
                 if(photoref.current){
@@ -28,7 +34,7 @@ const PhotoCapture = ({  onBack }) => {
             }
             
         }
-        camerainti()
+        camera()
     })
     const CaptureImage = async() =>{
         const video = photoref.current;
@@ -38,7 +44,28 @@ const PhotoCapture = ({  onBack }) => {
         console.log("Resolution:", video.videoWidth, "x", video.videoHeight);
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        context.filter =  filters[filter];;
+        context.filter =  filters[filter];
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/png');
+        console.log(imageData);
+        if(user){
+            
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: JSON.stringify({ imageData , username }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const result = await res.json();
+            if (result.success){
+                console.log('Photo saved to Supabase!');
+            }else {
+                alert('Failed to upload.');
+            }
+        } else {
+            alert('User not signed in!');
+        }
     };  
 
 
